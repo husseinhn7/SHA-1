@@ -1,0 +1,191 @@
+int main(int argc, char* argv[]){
+    
+    std::string g = get_bin_from_file(argv[1]);
+    std::string * ptr = &g;
+    preprocessing(ptr);
+    std::vector<std::vector<std::bitset<32>>> list_of_chunks;
+    std::vector<std::vector<std::bitset<32>>> * list_of_chunks_ptr = &list_of_chunks;
+    loop(list_of_chunks_ptr , ptr);
+    
+    return 0;
+} 
+this is my main function the first function in it is called get bin from file which takes as an argument the path of the Vial I want to open and in the following lines I will be providing the code of the get bin function and this is the code
+
+std::string get_bin_from_file(std::string path){
+    std::string binary_format = "" ; 
+    std::ifstream inputFile(path , std::ios::binary);
+     if (!inputFile) {
+        std::cerr << "Failed to open the input file." << std::endl;
+        return "1";
+    }
+    
+     char byte;
+     while (inputFile.get(byte)) {
+        std::bitset<8> bits(byte);
+        binary_format = binary_format + bits.to_string();
+    }
+
+    inputFile.close();
+    return binary_format;
+
+};
+
+so in simple terms we can say that this function takes a path of a file and then return the bits of that file as a string of one and zeroesand after that I define a pointer to where I stored that bits of Zeros and ones so I can access them later and then I call the pre-processing function which takes as an argument a pointer to a string which in this case I pass to it the pointer of the bits of the file and this is the implementation of the pre-processing function  
+
+void preprocessing(std::string *msg){
+    std::string formatted_msg = ""   ; 
+    int msg_length = msg->length();
+    // print(msg_length);
+    std::bitset<32> msg_bin_length = (std::bitset<32>)msg_length ;
+    std::string len = msg_bin_length.to_string();
+    if (msg_length < 448){
+        *msg =  *msg + "1" + add_zeros(447 - msg_length + 64 - len.length() ) + len ;
+    }
+    else {
+        *msg =  *msg + "1" + add_zeros(447 - msg_length%512 + 64 - len.length() ) + len ;
+    }
+    // print(msg->length());
+    // print(len);
+};
+so the preprocessing function is a void function which takes as an argument a pointer to a string and return nothing the purpose of this function is to is 2 first check the length of the string of bits if it's smaller than 448 it will add just 1 and 0s to the string until it's length became equal to 448 and then takes the length of the original message encoded in binary and place it at the end of a the string and add Zeros to the left of that size of the original string until it equals 64 bits and then add those 64 bits to the 448 bits we added the zero is to and then saves that data 2 v the pointer of the original message and if the message is bigger than 512 we make it concurrent to 512 boy adding Zeros and repeating the above process so that the length of the message became concurrent 2 512  and back to the main function we define a variable called list of chunks who's data type is a vector consists of Vector which consists of bitset  of 32 bits and then we define a pointer to that variable and then at last week call the loop function the loop function as I define it as follows
+
+
+
+void loop(std::vector<std::vector<std::bitset<32>>> * list, std::string * full_data){
+    
+    std::bitset<32> H0 = 0b01100111010001010010001100000001;
+    std::bitset<32> H1 = 0b11101111110011011010101110001001;
+    std::bitset<32> H2 = 0b10011000101110101101110011111110;
+    std::bitset<32> H3 = 0b00010000001100100101010001110110;
+    std::bitset<32> H4 = 0b11000011110100101110000111110000;
+    int index = 0;
+    print(full_data->length());
+    print(*full_data);
+    print("=============================================");
+    for (int i =0 ; i < full_data->length() ; i+=512){
+        list->push_back(separate(full_data->substr(i , 512)));
+        index++;
+        print(full_data->substr(i , 512));
+        print("=============================================");
+    }
+
+    print(index);
+    for (std::vector<std::bitset<32>> vector : *list){
+        main_loop(&vector);
+    }
+    std::bitset<32> h0 = H0.to_ulong() + A.to_ulong();
+    std::bitset<32> h1 = H1.to_ulong() + B.to_ulong();
+    std::bitset<32> h2 = H2.to_ulong() + C.to_ulong();
+    std::bitset<32> h3 = H3.to_ulong() + D.to_ulong();
+    std::bitset<32> h4 = H4.to_ulong() + E.to_ulong();
+    std::string result = hex(h0.to_ulong()) + hex(h1.to_ulong()) +  hex(h2.to_ulong()) +  hex(h3.to_ulong()) + hex(h4.to_ulong());
+    print(result);
+}; 
+
+so this loop function does the following first it's avoid function which means it returns nothing and it has two arguments the first one is a pointer to a vector consists of vectors consisting of a 32 bits and the second argument is a pointer to a string at the very top of the of the function we define a 5 variables naming for h0 to H4 H of each of data type of fitted 32 and then we preform a for loop this for loop checks the very purpose of this for loop is to divide the original message or the original bits of data that we have pre-processed with the pre-processing function and split them into five hundred and twelve string of data each with a length of 512 and then we pass on that 512 bits of data to a function called separate that is defined as follows 
+
+
+std::vector<std::bitset<32>>  separate(std::string chunk){
+    std::vector<std::bitset<32>> list_of_words ;
+    for(int i = 0 ; i < 512 ; i+=32){
+        std::bitset<32> binary(chunk.substr(i,32));
+        list_of_words.push_back(binary );
+    }
+    add_80_words(&list_of_words);
+    return list_of_words;
+};
+
+
+this function splits the 512 bits of string into 16 string strings each one of them is 32 bits and then it puts them inside a vector and we call a function called add  words80 80 words this function completes the vector to be from 16 words to 80 words and this function is defined as follows 
+
+void add_80_words(std::vector<std::bitset<32>>  *words){
+    
+    for (int i = 16 ; i < 80 ; ++i){
+        std::bitset<32> new_element = (*words)[i-3] xor (*words)[i-8] xor (*words)[i-14] xor (*words)[i-16] ;
+        std::string str = new_element.to_string();
+        str = str.substr(1,31) + str[0];
+        words->push_back((std::bitset<32>)str);
+    }
+};
+
+ 
+I'm back to the loop function after the for loop is ended we enter this second for Loop this for loop acts on thesecond for loop is a range based for Loop which Loops over the list the content of the list pointer and that and then before the following operation on each one of them by calling a function called main loop which is defined as follows 
+
+
+void main_loop(std::vector<std::bitset<32>> *words){
+    int z = 0 ;
+    for(int i=0 ; i < 80 ; ++i){
+        // print((*words)[i]);
+        if (i<20){
+            function_1((*words)[i]);
+        }
+
+        else if ( i > 19 & i < 40){
+            function_2((*words)[i]);
+        }
+
+        else if ( i > 39 & i < 60){
+            function_3((*words)[i]);
+        }
+
+        else if ( i > 59 & i < 80){
+            function_4((*words)[i]);
+        }
+        z++;
+    }
+    // print("+++++++++++++++++");
+    // print(z);
+    // z=0;
+}; 
+
+this function takes in a vector a pointer to a vector of bed sets of 32 bits and it goes with a for loop from I equals 0 to I equals 179 and then it checks for the index if the index is less than 20 it will before function 1 and if it if it's between 80 and 40 it be before function to and so on so as you see and it's definition so and functions from one from function 1 to function four are defined as follows 
+
+void function_1(std::bitset<32> word){
+    std::bitset<32> f ;
+    std::bitset<32> k = 0b01011010100000100111100110011001;
+    f = (B & C) | (~B & D);
+    std::bitset<32> temp = f.to_ulong() + k.to_ulong() + E.to_ulong() + lrotate(A , 5).to_ulong() + word.to_ulong();
+    E = D;
+    D = C;
+    C = lrotate(B , 30);
+    B = A;
+    A = temp;
+};
+
+void function_2(std::bitset<32> word){
+    std::bitset<32> f ;
+    std::bitset<32> k = 0b01101110110110011110101110100001;
+    f = (B ^ C) ^ D;
+    std::bitset<32> temp = f.to_ulong() + k.to_ulong() + E.to_ulong() + lrotate(A , 5).to_ulong() + word.to_ulong();
+    E = D;
+    D = C;
+    C = lrotate(B , 30);
+    B = A;
+    A = temp;
+};
+
+void function_3(std::bitset<32> word){
+    std::bitset<32> f ;
+    std::bitset<32> k = 0b10001111000110111011110011011100;
+    f = ((B & C) | (B & D) ) | (C & D);
+    std::bitset<32> temp = f.to_ulong() + k.to_ulong() + E.to_ulong() + lrotate(A , 5).to_ulong() + word.to_ulong();
+    E = D;
+    D = C;
+    C = lrotate(B , 30);
+    B = A;
+    A = temp;
+};
+
+void function_4(std::bitset<32> word){
+    std::bitset<32> f ;
+    std::bitset<32> k = 0b11001010011000101100000111010110;
+    f = (B ^ C) ^  D;
+    std::bitset<32> temp = f.to_ulong() + k.to_ulong() + E.to_ulong() + lrotate(A , 5).to_ulong() + word.to_ulong() ;
+    E = D;
+    D = C;
+    C = lrotate(B , 30);
+    B = A;
+    A = temp;
+};
+
+and back to the main loop function over back to the loop function when the four range based for loop is ended we calculate H small zero and H small 4 by calculating the h0 and adding it to a and H1 to be and so on  as you have seen defined in the loop function now the question is my code works perfectly for Strings or data smaller than 512 bits but  it gives wrong results for the code smaller than I'm sorry for the code bigger than 500 and 12 bits where is the problem in my code and how can I fix it
